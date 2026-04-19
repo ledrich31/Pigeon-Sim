@@ -99,24 +99,63 @@ function resetCar() {
 class Pigeon {
   constructor() {
     this.pos = createVector(random(1920), random(480, 1050));
-    this.state = 'wandering'; this.timer = 0; this.facingRight = true;
+    this.target = createVector(random(1920), random(480, 1050));
+    this.state = 'wandering';
+    this.timer = 0;
+    this.facingRight = true;
   }
   update(player) {
     let dP = dist(this.pos.x, this.pos.y, player.x, player.y);
-    if (dP < 100) { 
-      let flee = p5.Vector.sub(this.pos, createVector(player.x, player.y)); 
-      flee.setMag(10); 
-      this.pos.add(flee); 
+    
+    // Flee logic
+    if (dP < 100) {
+      let flee = p5.Vector.sub(this.pos, createVector(player.x, player.y));
+      flee.setMag(10);
+      this.pos.add(flee);
+      this.state = 'fleeing';
+    } else {
+      // Randomly change state
+      if (this.state !== 'fleeing' && random() < 0.01) {
+        this.state = random(['wandering', 'pecking']);
+        this.timer = frameCount + 100;
+      }
+      
+      if (this.state === 'wandering') {
+        let vel = p5.Vector.sub(this.target, this.pos);
+        if (abs(vel.x) > 0.1) this.facingRight = (vel.x > 0);
+        vel.setMag(2);
+        this.pos.add(vel);
+        if (this.pos.dist(this.target) < 10) this.target = createVector(random(1920), random(480, 1050));
+      }
+      
+      if (frameCount > this.timer) this.state = 'wandering';
     }
     this.pos.y = constrain(this.pos.y, 480, 1050);
   }
   show() {
     push(); translate(this.pos.x, this.pos.y);
     if (!this.facingRight) scale(-1, 1);
-    stroke(255, 215, 0); strokeWeight(5); line(-10, 10, -10, 25); line(10, 10, 10, 25);
+    
+    // Head bobbing logic
+    let bob = (this.state === 'wandering') ? sin(frameCount * 0.3) * 5 : 0;
+    
+    // Legs
+    stroke(255, 215, 0); strokeWeight(5); 
+    line(-10, 10, -10, 25); line(10, 10, 10, 25);
+    
+    // Body
     noStroke(); fill(80, 80, 120); ellipse(0, 0, 40, 30);
-    fill(100, 100, 140); ellipse(15, -10, 25, 25); 
-    fill(255, 180, 50); triangle(25, -12, 35, -8, 25, -4);
-    fill(0); ellipse(20, -12, 10, 10); pop();
+    
+    // Head with bobbing
+    fill(100, 100, 140); ellipse(15 + bob, -10, 25, 25); 
+    
+    // Beak
+    fill(255, 180, 50); 
+    if (this.state === 'pecking') triangle(25 + bob, -12, 35 + bob, -8, 25 + bob, -4);
+    else triangle(25 + bob, -15, 35 + bob, -12, 25 + bob, -9);
+    
+    // Eye
+    fill(0); ellipse(20 + bob, -12, 10, 10); 
+    pop();
   }
 }
