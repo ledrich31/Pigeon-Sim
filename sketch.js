@@ -1,5 +1,6 @@
 let player;
 let pigeons = [];
+let foodPositions = [];
 let car = { x: -100, y: 570, speed: 6, color: [200, 50, 50], dir: 1, timer: 0 };
 let humanEmoji = '🚶';
 let playerFacingRight = false;
@@ -7,6 +8,14 @@ let playerFacingRight = false;
 function setup() {
   createCanvas(1920, 1080);
   player = { x: 960, y: 850 };
+  
+  // Pizza positions
+  for (let i = 0; i < 15; i++) {
+    // Random spots on the sidewalks (y ranges: 480-580 and 750-850)
+    let y = random() > 0.5 ? random(480, 580) : random(750, 850);
+    foodPositions.push(createVector(random(50, 1870), y));
+  }
+  
   for (let i = 0; i < 15; i++) pigeons.push(new Pigeon());
 }
 
@@ -31,6 +40,12 @@ function draw() {
   stroke(255, 255, 0); strokeWeight(8);
   for(let x = 0; x < 1920; x += 80) line(x, 645, x + 40, 645);
   noStroke();
+
+  // Pizza
+  textSize(40);
+  for (let f of foodPositions) {
+    text('🍕', f.x, f.y);
+  }
 
   // Instructions
   fill(255); textSize(30);
