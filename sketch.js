@@ -99,6 +99,52 @@ class Pigeon {
     let dP = dist(this.pos.x, this.pos.y, player.x, player.y);
     let dC = dist(this.pos.x, this.pos.y, car.x + 80, car.y + 45);
     
+    // 1. Fleeing Priority
+    if (dP < 100 || dC < 120) {
+      let avoidSource = (dP < 100) ? createVector(player.x, player.y) : createVector(car.x + 80, car.y + 45);
+      let flee = p5.Vector.sub(this.pos, avoidSource);
+      flee.setMag(10);
+      this.pos.add(flee);
+      this.state = 'fleeing';
+      this.timer = frameCount + 60; // Flee for 1 second
+    } 
+    // 2. State Transition Logic
+    else if (frameCount > this.timer) {
+      let choice = random();
+      if (choice < 0.4) {
+        this.state = 'seeking';
+        let closest = foodPositions[0];
+        for(let f of foodPositions) if(this.pos.dist(f) < this.pos.dist(closest)) closest = f;
+        this.target = closest;
+      } else if (choice < 0.7) {
+        this.state = 'pecking';
+        this.timer = frameCount + 120; // Peck for 2 seconds
+      } else {
+        this.state = 'wandering';
+        this.target = createVector(random(1920), random(480, 1050));
+      }
+    }
+
+    // 3. Movement Logic
+    if (this.state === 'seeking' || this.state === 'wandering' || this.state === 'fleeing') {
+      let vel = p5.Vector.sub(this.target, this.pos);
+      // If close to target, stop seeking
+      if (this.state === 'seeking' && vel.mag() < 10) {
+        this.state = 'pecking';
+        this.timer = frameCount + 120;
+      } else {
+        if (abs(vel.x) > 0.1) this.facingRight = (vel.x > 0);
+        vel.setMag(2);
+        this.pos.add(vel);
+        
+        // If wandering and reached target, pick new one
+        if (this.state === 'wandering' && this.pos.dist(this.target) < 10) {
+           this.target = createVector(random(1920), random(480, 1050));
+        }
+      }
+    }
+    this.pos.y = constrain(this.pos.y, 480, 1050);
+  }
     // Flee Logic
     if (dP < 100 || dC < 120) {
       let avoidSource = (dP < 100) ? createVector(player.x, player.y) : createVector(car.x + 80, car.y + 45);
