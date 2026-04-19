@@ -1,6 +1,6 @@
 let player;
 let pigeons = [];
-let car = { x: -100, y: 570, speed: 4, color: [200, 50, 50], dir: 1, timer: 0 };
+let car = { x: -100, y: 570, speed: 6, color: [200, 50, 50], dir: 1, timer: 0 };
 let humanEmoji = '🚶';
 let playerFacingRight = false;
 
@@ -32,21 +32,25 @@ function draw() {
   for(let x = 0; x < 1920; x += 80) line(x, 645, x + 40, 645);
   noStroke();
 
-  // Control Instructions
+  // Instructions
   fill(255); textSize(30);
   text("Use WASD to Walk", 50, 1040);
 
-  // Car
+  // Car Logic
   if (car.timer > 0) car.timer--;
   else {
     fill(car.color[0], car.color[1], car.color[2]);
     rect(car.x, car.y + 20, 160, 50, 10);
     fill(200, 230, 255); rect(car.x + 30, car.y + 5, 100, 30, 10);
+    fill(30);
+    ellipse(car.x + 40, car.y + 70, 40, 40);
+    ellipse(car.x + 120, car.y + 70, 40, 40);
+    
     car.x += car.speed * car.dir;
     if (car.x > 2000 || car.x < -300) resetCar();
   }
 
-  // Player
+  // Player Movement
   if (keyIsDown(87)) player.y -= 8;
   if (keyIsDown(83)) player.y += 8;
   if (keyIsDown(65)) { player.x -= 8; playerFacingRight = false; }
@@ -73,7 +77,7 @@ function drawBuilding(x, y, w, h, col) {
 function resetCar() {
   car.dir = random() > 0.5 ? 1 : -1;
   car.x = (car.dir > 0) ? -200 : 2000;
-  car.speed = random(3, 6);
+  car.speed = random(4, 8);
   car.timer = random(100, 400); 
 }
 
@@ -84,7 +88,11 @@ class Pigeon {
   }
   update(player) {
     let dP = dist(this.pos.x, this.pos.y, player.x, player.y);
-    if (dP < 100) { let flee = p5.Vector.sub(this.pos, createVector(player.x, player.y)); flee.setMag(10); this.pos.add(flee); }
+    if (dP < 100) { 
+      let flee = p5.Vector.sub(this.pos, createVector(player.x, player.y)); 
+      flee.setMag(10); 
+      this.pos.add(flee); 
+    }
     this.pos.y = constrain(this.pos.y, 480, 1050);
   }
   show() {
