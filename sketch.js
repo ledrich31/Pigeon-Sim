@@ -90,13 +90,16 @@ class Pigeon {
   constructor() {
     this.pos = createVector(random(1920), random(480, 1050));
     this.target = createVector(random(1920), random(480, 1050));
-    this.state = 'wandering'; this.timer = 0; this.facingRight = true;
+    this.state = 'wandering'; 
+    this.timer = 0;
+    this.facingRight = true;
   }
+  
   update(player, car) {
     let dP = dist(this.pos.x, this.pos.y, player.x, player.y);
     let dC = dist(this.pos.x, this.pos.y, car.x + 80, car.y + 45);
     
-    // Flee logic (Avoids player OR car)
+    // Flee Logic
     if (dP < 100 || dC < 120) {
       let avoidSource = (dP < 100) ? createVector(player.x, player.y) : createVector(car.x + 80, car.y + 45);
       let flee = p5.Vector.sub(this.pos, avoidSource);
@@ -104,25 +107,50 @@ class Pigeon {
       this.pos.add(flee);
       this.state = 'fleeing';
     } else {
-      if (this.state !== 'fleeing' && random() < 0.01) {
-        this.state = random(['wandering', 'pecking']);
-        this.timer = frameCount + 100;
+      // Logic for choosing state
+      if (this.state !== 'fleeing' && frameCount > this.timer) {
+        let choice = random();
+        if (choice < 0.3) {
+          this.state = 'seeking';
+          // Find closest pizza
+          let closest = foodPositions[0];
+          for(let f of foodPositions) if(this.pos.dist(f) < this.pos.dist(closest)) closest = f;
+          this.target = closest;
+        } else if (choice < 0.6) {
+          this.state = 'pecking';
+          this.timer = frameCount + 100;
+        } else {
+          this.state = 'wandering';
+          this.target = createVector(random(1920), random(480, 1050));
+        }
       }
-      if (this.state === 'wandering') {
+      
+      // Execute state
+      if (this.state === 'seeking') {
+        let vel = p5.Vector.sub(this.target, this.pos);
+        if (vel.mag() < 10) { this.state = 'pecking'; this.timer = frameCount + 150; }
+        else {
+          this.facingRight = (vel.x > 0);
+          vel.setMag(2);
+          this.pos.add(vel);
+        }
+      } else if (this.state === 'wandering') {
         let vel = p5.Vector.sub(this.target, this.pos);
         if (abs(vel.x) > 0.1) this.facingRight = (vel.x > 0);
         vel.setMag(2);
         this.pos.add(vel);
         if (this.pos.dist(this.target) < 10) this.target = createVector(random(1920), random(480, 1050));
       }
-      if (frameCount > this.timer) this.state = 'wandering';
     }
     this.pos.y = constrain(this.pos.y, 480, 1050);
   }
+
   show() {
     push(); translate(this.pos.x, this.pos.y);
     if (!this.facingRight) scale(-1, 1);
-    let bob = (this.state === 'wandering') ? sin(frameCount * 0.3) * 5 : 0;
+    let bob = (this.state !== 'pecking') ? sin(frameCount * 0.3) * 5 : 0;
+    
+    // Drawing remains the same as before...
     stroke(255, 215, 0); strokeWeight(5); line(-10, 10, -10, 25); line(10, 10, 10, 25);
     noStroke(); fill(80, 80, 120); ellipse(0, 0, 40, 30);
     fill(100, 100, 140); ellipse(15 + bob, -10, 25, 25); 
